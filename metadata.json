@@ -1,0 +1,6 @@
+{
+  "name": "experimento de percepção auditiva",
+  "description": "Comparar e avaliar amostras de áudio.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
