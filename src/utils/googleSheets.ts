@@ -140,7 +140,7 @@ export function formatSessionRow(session: ParticipantSession): (string | number 
     .join('; ') || '';
 
   const mapSummary = session.mapClickResponses
-    ?.map((r) => `${r.trialId}->${r.detectedState || r.detectedRegion || 'Clique'} (${r.clickX.toFixed(1)}%, ${r.clickY.toFixed(1)}%)`)
+    ?.map((r) => `${r.trialId}: (${r.clickX.toFixed(1)}%, ${r.clickY.toFixed(1)}%)`)
     .join('; ') || '';
 
   return [

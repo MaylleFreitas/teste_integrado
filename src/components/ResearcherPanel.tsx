@@ -3,6 +3,7 @@ import { AudioPairTrial, MapAudioTrial, ParticipantSession } from '../types';
 import { Settings, Plus, Trash2, Download, Volume2, MapPin, Database, RefreshCw, X, Play, CheckCircle, FileSpreadsheet, ExternalLink, Upload, FileJson, Save, Copy } from 'lucide-react';
 import { playAudioItem } from '../utils/audioGenerator';
 import { signInWithGoogle, createGoogleSpreadsheet, appendSpreadsheetRows, formatSessionRow, getCachedAccessToken } from '../utils/googleSheets';
+import { generateWideCSV, downloadCSVFile } from '../utils/csvExport';
 
 interface ResearcherPanelProps {
   audioPairs: AudioPairTrial[];
@@ -310,94 +311,8 @@ export const ResearcherPanel: React.FC<ResearcherPanelProps> = ({
       return;
     }
 
-    const headers = [
-      'sessionId',
-      'startTime',
-      'endTime',
-      'trialType',
-      'trialId',
-      'pairIndex',
-      'differenceScore',
-      'mapClickX',
-      'mapClickY',
-      'mapDetectedState',
-      'mapDetectedRegion',
-      'genero',
-      'faixaEtaria',
-      'escolaridade',
-      'regiaoOrigem',
-      'estadoNordeste',
-      'resideCampinas',
-      'tempoCampinas',
-      'idadeChegadaCampinas',
-      'classificacaoMigratoria'
-    ];
-
-    const rows: string[][] = [];
-
-    allSessions.forEach((s) => {
-      s.audioPairResponses.forEach((res) => {
-        rows.push([
-          s.sessionId,
-          s.startTime,
-          s.endTime || '',
-          'AudioPairComparison',
-          res.trialId,
-          res.pairIndex.toString(),
-          res.differenceScore.toString(),
-          '',
-          '',
-          '',
-          '',
-          s.sociodemographic.genero || '',
-          s.sociodemographic.faixaEtaria || '',
-          s.sociodemographic.escolaridade || '',
-          s.sociodemographic.regiaoOrigem || '',
-          s.sociodemographic.estadoNordeste || '',
-          s.sociodemographic.resideCampinas || '',
-          s.sociodemographic.tempoCampinas || '',
-          s.sociodemographic.idadeChegadaCampinas || '',
-          s.sociodemographic.classificacaoMigratoria || ''
-        ]);
-      });
-
-      s.mapClickResponses.forEach((res) => {
-        rows.push([
-          s.sessionId,
-          s.startTime,
-          s.endTime || '',
-          'MapDialectGeolocation',
-          res.trialId,
-          res.trialIndex.toString(),
-          '',
-          res.clickX.toString(),
-          res.clickY.toString(),
-          res.detectedState || '',
-          res.detectedRegion || '',
-          s.sociodemographic.genero || '',
-          s.sociodemographic.faixaEtaria || '',
-          s.sociodemographic.escolaridade || '',
-          s.sociodemographic.regiaoOrigem || '',
-          s.sociodemographic.estadoNordeste || '',
-          s.sociodemographic.resideCampinas || '',
-          s.sociodemographic.tempoCampinas || '',
-          s.sociodemographic.idadeChegadaCampinas || '',
-          s.sociodemographic.classificacaoMigratoria || ''
-        ]);
-      });
-    });
-
-    const csvContent =
-      'data:text/csv;charset=utf-8,' +
-      [headers.join(','), ...rows.map((e) => e.map((val) => `"${val.replace(/"/g, '""')}"`).join(','))].join('\n');
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `dataset_completo_experimento_${Date.now()}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const csvContent = generateWideCSV(allSessions);
+    downloadCSVFile(csvContent, `dataset_completo_experimento_${Date.now()}.csv`);
   };
 
   return (

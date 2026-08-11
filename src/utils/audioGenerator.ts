@@ -43,6 +43,35 @@ export function stopCurrentAudio() {
   }
 }
 
+export function normalizeAudioUrl(url?: string): string {
+  if (!url) return '';
+  let trimmed = url.trim();
+  if (trimmed.includes('dropbox.com')) {
+    // Replace www.dropbox.com with dl.dropboxusercontent.com for direct instant CDN streaming
+    trimmed = trimmed.replace('www.dropbox.com', 'dl.dropboxusercontent.com');
+    trimmed = trimmed.replace(/[?&]dl=[01]/g, '').replace(/[?&]raw=1/g, '');
+  }
+  return trimmed;
+}
+
+const audioCache = new Map<string, HTMLAudioElement>();
+
+export function preloadAudio(url?: string): void {
+  const finalUrl = normalizeAudioUrl(url);
+  if (!finalUrl || finalUrl.startsWith('data:') || audioCache.has(finalUrl)) {
+    return;
+  }
+
+  try {
+    const audio = new Audio(finalUrl);
+    audio.preload = 'auto';
+    audio.load();
+    audioCache.set(finalUrl, audio);
+  } catch (e) {
+    console.warn('Preload audio error:', e);
+  }
+}
+
 export function playAudioItem(options: PlayAudioOptions): Promise<void> {
   return new Promise((resolve) => {
     stopCurrentAudio();
@@ -52,11 +81,23 @@ export function playAudioItem(options: PlayAudioOptions): Promise<void> {
       resolve();
     };
 
+    const finalUrl = normalizeAudioUrl(options.url);
+
     // 1. Try custom HTML5 Audio URL if valid HTTP link
-    if (options.url && options.url.trim().length > 0 && (options.url.startsWith('http://') || options.url.startsWith('https://') || options.url.startsWith('data:audio'))) {
-      const audio = new Audio();
-      audio.crossOrigin = 'anonymous';
-      audio.src = options.url;
+    if (finalUrl && (finalUrl.startsWith('http://') || finalUrl.startsWith('https://') || finalUrl.startsWith('data:audio'))) {
+      let audio = audioCache.get(finalUrl);
+      if (!audio) {
+        audio = new Audio(finalUrl);
+        audio.preload = 'auto';
+        audioCache.set(finalUrl, audio);
+      } else {
+        try {
+          audio.currentTime = 0;
+        } catch {
+          // ignore
+        }
+      }
+
       activeAudio = audio;
 
       let hasHandledFallback = false;
@@ -68,10 +109,10 @@ export function playAudioItem(options: PlayAudioOptions): Promise<void> {
         }
       };
 
-      // Set safety timeout in case cross-origin hangs
+      // Set safety timeout for audio loading
       const loadTimeout = setTimeout(() => {
         doFallback();
-      }, 1500);
+      }, 8000);
 
       audio.onended = () => {
         clearTimeout(loadTimeout);

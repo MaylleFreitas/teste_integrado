@@ -106,18 +106,15 @@ export const AudioPlayerBox: React.FC<AudioPlayerBoxProps> = ({
       onClick={handleTogglePlay}
       className={`group w-full p-5 sm:p-6 rounded-xl border-2 border-dashed transition-all text-left relative overflow-hidden focus:outline-none focus:ring-2 focus:ring-indigo-500/40 cursor-pointer ${borderStyles[accentColor]}`}
     >
-      {/* Top badges */}
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-xs font-mono font-bold tracking-wider text-slate-500 uppercase">
-          {displayTitle}
-        </span>
-        {playCount > 0 && (
+      {/* Played Badge if any */}
+      {playCount > 0 && (
+        <div className="flex items-center justify-end mb-2">
           <span className="flex items-center gap-1 text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold">
             <CheckCircle className="w-3 h-3 text-emerald-600" />
             Ouvido ({playCount}x)
           </span>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Main player controls row */}
       <div className="flex items-center gap-4">
@@ -140,11 +137,6 @@ export const AudioPlayerBox: React.FC<AudioPlayerBoxProps> = ({
               </span>
             )}
           </div>
-          {displaySubtitle && (
-            <p className="text-xs text-slate-500 truncate mt-0.5">
-              {displaySubtitle}
-            </p>
-          )}
         </div>
       </div>
 

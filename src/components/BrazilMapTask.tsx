@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MapAudioTrial, MapClickResponse } from '../types';
-import { playAudioItem, stopCurrentAudio } from '../utils/audioGenerator';
+import { playAudioItem, stopCurrentAudio, preloadAudio } from '../utils/audioGenerator';
 import { MapPin, Play, Pause, ArrowRight, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
 import brazilMapImage from '../assets/images/brazil_map_outline_png_1786371761327.jpg';
 
@@ -46,7 +46,15 @@ export const BrazilMapTask: React.FC<BrazilMapTaskProps> = ({ trials, onComplete
     setStartTime(Date.now());
     setValidationError(null);
     stopCurrentAudio();
-  }, [currentIndex]);
+
+    if (currentTrial) {
+      preloadAudio(currentTrial.audioUrl);
+    }
+    const nextTrial = trials[currentIndex + 1];
+    if (nextTrial) {
+      preloadAudio(nextTrial.audioUrl);
+    }
+  }, [currentIndex, trials, currentTrial]);
 
   const handlePlayAudio = async () => {
     if (isPlaying) {
@@ -176,24 +184,16 @@ export const BrazilMapTask: React.FC<BrazilMapTaskProps> = ({ trials, onComplete
               </button>
             </div>
 
-            {/* Quick Clear indicator inside Left Box */}
-            {clickPos ? (
-              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs bg-indigo-50/60 p-2.5 rounded-lg border border-indigo-100/80">
-                <div className="flex items-center gap-1.5 font-medium text-emerald-700">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Ponto marcado</span>
-                </div>
+            {/* Quick Clear option when point is selected */}
+            {clickPos && (
+              <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-end text-xs">
                 <button
                   onClick={() => setClickPos(null)}
                   className="text-[11px] text-slate-500 hover:text-slate-900 underline flex items-center gap-1 cursor-pointer font-medium"
                 >
                   <RefreshCw className="w-3 h-3" />
-                  Limpar
+                  Limpar seleção
                 </button>
-              </div>
-            ) : (
-              <div className="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-400 font-mono text-center">
-                Clique no mapa ao lado para registrar o ponto.
               </div>
             )}
           </div>

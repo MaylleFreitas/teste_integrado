@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AudioPairTrial, AudioPairResponse } from '../types';
 import { AudioPlayerBox } from './AudioPlayerBox';
+import { preloadAudio } from '../utils/audioGenerator';
 import { Volume2, ArrowRight, ArrowLeft, AlertCircle, Sparkles, CheckCircle } from 'lucide-react';
 
 interface AudioComparisonTrialProps {
@@ -35,7 +36,18 @@ export const AudioComparisonTrial: React.FC<AudioComparisonTrialProps> = ({
     setAudio2Count(0);
     setStartTime(Date.now());
     setValidationError(null);
-  }, [currentIndex]);
+
+    // Preload current and next trial audio
+    if (currentTrial) {
+      preloadAudio(currentTrial.audio1Url);
+      preloadAudio(currentTrial.audio2Url);
+    }
+    const nextTrial = trials[currentIndex + 1];
+    if (nextTrial) {
+      preloadAudio(nextTrial.audio1Url);
+      preloadAudio(nextTrial.audio2Url);
+    }
+  }, [currentIndex, trials, currentTrial]);
 
   const canProceed = audio1Count > 0 && audio2Count > 0;
 
@@ -229,7 +241,7 @@ export const AudioComparisonTrial: React.FC<AudioComparisonTrialProps> = ({
           {!canProceed && (
             <span className="text-amber-700 flex items-center gap-1.5 font-sans font-medium">
               <Volume2 className="w-4 h-4 text-amber-600 shrink-0" />
-              Ouça Gravação A e Gravação B para habilitar o botão
+              Ouça ambas as gravações para habilitar o botão
             </span>
           )}
         </div>

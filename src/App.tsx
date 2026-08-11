@@ -25,34 +25,34 @@ export default function App() {
   // Load saved stimuli on initial mount
   useEffect(() => {
     loadStimuliFromStorage().then((saved) => {
-      if (saved) {
-        if (saved.audioPairs && saved.audioPairs.length > 0) {
-          // Keep recorded audio pairs (e.g. data URLs, auto-generated pairs, or Porta recordings)
-          const recordedOnly = saved.audioPairs.filter(
-            (p) =>
-              p.audio1Url?.startsWith('data:') ||
-              p.audio2Url?.startsWith('data:') ||
-              p.id.includes('auto') ||
-              p.title1.toLowerCase().includes('porta') ||
-              p.title2.toLowerCase().includes('porta') ||
-              p.speechText1 === 'Porta'
-          );
+      if (saved && saved.audioPairs && saved.audioPairs.length > 0) {
+        // Filter pairs that have valid audio URLs
+        const validPairs = saved.audioPairs.filter(
+          (p) => p.audio1Url && p.audio1Url.trim().length > 0 && p.audio2Url && p.audio2Url.trim().length > 0
+        );
 
-          const basePairs = recordedOnly.length > 0 ? recordedOnly : saved.audioPairs;
-
-          const formattedPairs = basePairs.map((pair, idx) => ({
+        if (validPairs.length > 0) {
+          const formattedPairs = validPairs.map((pair, idx) => ({
             ...pair,
-            pairIndex: idx + 1,
-            title1: `Gravação ${idx * 2 + 1}`,
-            title2: `Gravação ${idx * 2 + 2}`,
-            description: `Combinação de mesma palavra "${pair.speechText1 || 'Porta'}"`
+            pairIndex: idx + 1
           }));
-
           setAudioPairs(formattedPairs);
+        } else {
+          setAudioPairs(DEFAULT_AUDIO_PAIRS);
         }
-        if (saved.mapTrials && saved.mapTrials.length > 0) {
-          setMapTrials(saved.mapTrials);
+      } else {
+        setAudioPairs(DEFAULT_AUDIO_PAIRS);
+      }
+
+      if (saved && saved.mapTrials && saved.mapTrials.length > 0) {
+        const validMap = saved.mapTrials.filter((m) => m.audioUrl && m.audioUrl.trim().length > 0);
+        if (validMap.length > 0) {
+          setMapTrials(validMap);
+        } else {
+          setMapTrials(DEFAULT_MAP_TRIALS);
         }
+      } else {
+        setMapTrials(DEFAULT_MAP_TRIALS);
       }
       setIsStimuliLoaded(true);
     });

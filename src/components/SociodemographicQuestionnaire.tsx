@@ -10,7 +10,7 @@ export const SociodemographicQuestionnaire: React.FC<SociodemographicQuestionnai
   const [formData, setFormData] = useState<SociodemographicData>({
     genero: undefined,
     generoOutro: '',
-    faixaEtaria: '18-35',
+    faixaEtaria: undefined,
     idadeAnosExata: '',
     escolaridade: undefined,
     regiaoOrigem: undefined,
@@ -21,12 +21,15 @@ export const SociodemographicQuestionnaire: React.FC<SociodemographicQuestionnai
     tempoCampinasAnos: '',
     idadeChegadaCampinas: undefined,
     idadeChegadaCampinasAnos: '',
+    eDeCampinasSudeste: undefined,
+    residiuOutrosLocaisSudeste: undefined,
+    residiuOutrosLocaisInfanciaSudeste: undefined,
+    outrosLocaisDetalhesSudeste: '',
     residiuOutrosLocais: undefined,
     outrosLocaisDetalhes: '',
     comentariosExperimento: ''
   });
 
-  const [useExactAgeMode, setUseExactAgeMode] = useState(false);
   const [useExactTempoMode, setUseExactTempoMode] = useState(false);
   const [useExactIdadeChegadaMode, setUseExactIdadeChegadaMode] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -36,7 +39,7 @@ export const SociodemographicQuestionnaire: React.FC<SociodemographicQuestionnai
   const isSudeste = formData.regiaoOrigem === 'Sudeste';
   const isOutraRegiao = ['Norte', 'Centro-Oeste', 'Sul', 'Exterior'].includes(formData.regiaoOrigem || '');
 
-  // 2.3 Reside em Campinas?
+  // 2.3 Reside em Campinas (Nordeste)
   const resideEmCampinas = formData.resideCampinas === 'sim';
   const naoResideEmCampinas = formData.resideCampinas === 'nao';
 
@@ -45,11 +48,16 @@ export const SociodemographicQuestionnaire: React.FC<SociodemographicQuestionnai
     ? resideEmCampinas
       ? 'nordestino_migrante'
       : 'nordestino_nao_migrante'
+    : isSudeste
+    ? formData.eDeCampinasSudeste === 'sim'
+      ? 'sudeste_rmc'
+      : formData.eDeCampinasSudeste === 'nao'
+      ? 'sudeste_outros'
+      : 'outra_regiao'
     : 'outra_regiao';
 
-  // Check if Section 2.6 should be visible:
-  // Visible if Sudeste OR (Nordeste and Não Reside em Campinas) OR (Nordeste, Reside em Campinas and completed 2.4/2.5)
-  const showSection26 = isSudeste || (isNordeste && naoResideEmCampinas) || (isNordeste && resideEmCampinas);
+  // Section 2.6 is visible for participants from other regions (not Sudeste, which has its own 2.3)
+  const showSection26 = !!formData.regiaoOrigem && !isSudeste;
 
   // Check if Section 2.7 (outros locais) should be visible
   const showSection27 = showSection26 && formData.residiuOutrosLocais === 'sim';
@@ -58,54 +66,99 @@ export const SociodemographicQuestionnaire: React.FC<SociodemographicQuestionnai
     e.preventDefault();
     setErrorMsg(null);
 
-    // Basic required fields validation
+    // 1. Social (Obrigatórios)
     if (!formData.genero) {
       setErrorMsg('Por favor, selecione seu gênero (1.1).');
       return;
     }
     if (formData.genero === 'outro' && !formData.generoOutro?.trim()) {
-      setErrorMsg('Por favor, especifique o seu gênero no campo de texto.');
+      setErrorMsg('Por favor, especifique o seu gênero no campo de texto (1.1).');
+      return;
+    }
+    if (!formData.faixaEtaria) {
+      setErrorMsg('Por favor, selecione sua faixa etária (1.2).');
       return;
     }
     if (!formData.escolaridade) {
       setErrorMsg('Por favor, selecione sua escolaridade (1.3).');
       return;
     }
+
+    // 2. Residência e Migração (Obrigatórios)
     if (!formData.regiaoOrigem) {
-      setErrorMsg('Por favor, selecione a região em que você nasceu ou cresceu (2.1).');
+      setErrorMsg('Por favor, selecione a região em que você passou a maior parte da sua infância (2.1).');
       return;
     }
 
+    // Condicional Nordeste
     if (isNordeste) {
       if (!formData.estadoNordeste) {
-        setErrorMsg('Por favor, selecione o estado em que nasceu (2.2).');
+        setErrorMsg('Por favor, selecione o estado em que nasceu (2.2 - Nordeste).');
         return;
       }
       if (formData.estadoNordeste === 'Outro' && !formData.estadoNordesteOutro?.trim()) {
-        setErrorMsg('Por favor, especifique o estado no campo "Outro".');
+        setErrorMsg('Por favor, especifique o estado no campo "Outro" (2.2 - Nordeste).');
         return;
       }
       if (!formData.resideCampinas) {
-        setErrorMsg('Por favor, responda se reside atualmente em Campinas (2.3).');
+        setErrorMsg('Por favor, responda se você reside atualmente em Campinas (2.3 - Nordeste).');
         return;
       }
       if (resideEmCampinas) {
         if (!useExactTempoMode && !formData.tempoCampinas) {
-          setErrorMsg('Por favor, informe há quanto tempo reside em Campinas (2.4).');
+          setErrorMsg('Por favor, informe há quanto tempo reside em Campinas (2.4 - Nordeste).');
+          return;
+        }
+        if (useExactTempoMode && !formData.tempoCampinasAnos?.trim()) {
+          setErrorMsg('Por favor, informe há quantos anos reside em Campinas (2.4 - Nordeste).');
           return;
         }
         if (!useExactIdadeChegadaMode && !formData.idadeChegadaCampinas) {
-          setErrorMsg('Por favor, informe com quantos anos chegou a Campinas (2.5).');
+          setErrorMsg('Por favor, informe com quantos anos chegou a Campinas (2.5 - Nordeste).');
+          return;
+        }
+        if (useExactIdadeChegadaMode && !formData.idadeChegadaCampinasAnos?.trim()) {
+          setErrorMsg('Por favor, informe a idade em anos com que chegou a Campinas (2.5 - Nordeste).');
           return;
         }
       }
     }
 
-    if (showSection26 && !formData.residiuOutrosLocais) {
-      setErrorMsg('Por favor, responda se já residiu em outros locais (2.6).');
-      return;
+    // Condicional Sudeste
+    if (isSudeste) {
+      if (!formData.eDeCampinasSudeste) {
+        setErrorMsg('Por favor, responda se você é da Região Metropolitana de Campinas (2.2 - Sudeste).');
+        return;
+      }
+      if (!formData.residiuOutrosLocaisSudeste) {
+        setErrorMsg('Por favor, responda se você já residiu em outros lugares (2.3 - Sudeste).');
+        return;
+      }
+      if (formData.residiuOutrosLocaisSudeste === 'sim') {
+        if (!formData.residiuOutrosLocaisInfanciaSudeste) {
+          setErrorMsg('Por favor, responda se a residência em outros lugares foi durante a sua infância (2.3 - Sudeste).');
+          return;
+        }
+        if (!formData.outrosLocaisDetalhesSudeste?.trim()) {
+          setErrorMsg('Por favor, informe em quais locais você residiu e por quanto tempo (2.3 - Sudeste).');
+          return;
+        }
+      }
     }
 
+    // 2.6 Residência em outros locais (Obrigatório para outras regiões)
+    if (showSection26) {
+      if (!formData.residiuOutrosLocais) {
+        setErrorMsg('Por favor, responda se você já residiu em outros locais (2.6).');
+        return;
+      }
+      if (formData.residiuOutrosLocais === 'sim' && !formData.outrosLocaisDetalhes?.trim()) {
+        setErrorMsg('Por favor, informe em quais outros locais você residiu e por quanto tempo (2.7).');
+        return;
+      }
+    }
+
+    // 2.8 Comentários é a ÚNICA pergunta opcional.
     const finalData: SociodemographicData = {
       ...formData,
       classificacaoMigratoria: classificacao
@@ -189,57 +242,36 @@ export const SociodemographicQuestionnaire: React.FC<SociodemographicQuestionnai
 
           {/* 1.2 Faixa etária */}
           <div className="space-y-2 pt-2 border-t border-slate-100">
-            <div className="flex items-center justify-between">
-              <label className="block text-sm font-semibold text-slate-800">
-                1.2 Qual é a sua faixa etária?
-              </label>
-              <button
-                type="button"
-                onClick={() => setUseExactAgeMode(!useExactAgeMode)}
-                className="text-xs text-indigo-600 hover:underline font-mono font-semibold"
-              >
-                {useExactAgeMode ? 'Alternar para categorias' : 'Alternar para idade exata (anos)'}
-              </button>
-            </div>
+            <label className="block text-sm font-semibold text-slate-800">
+              1.2 Qual é a sua faixa etária?
+            </label>
 
-            {!useExactAgeMode ? (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                {[
-                  { id: '18-35', label: '18–35 anos' },
-                  { id: '36-59', label: '36–59 anos' },
-                  { id: '60+', label: '60 anos ou mais' },
-                ].map((item) => (
-                  <label
-                    key={item.id}
-                    className={`flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer text-xs font-semibold transition-all ${
-                      formData.faixaEtaria === item.id
-                        ? 'bg-indigo-50 border-indigo-500 text-indigo-900 shadow-xs'
-                        : 'bg-slate-50 border-slate-200 text-slate-700 hover:border-indigo-300 hover:bg-indigo-50/50'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="faixaEtaria"
-                      value={item.id}
-                      checked={formData.faixaEtaria === item.id}
-                      onChange={() => setFormData({ ...formData, faixaEtaria: item.id })}
-                      className="accent-indigo-600"
-                    />
-                    <span>{item.label}</span>
-                  </label>
-                ))}
-              </div>
-            ) : (
-              <input
-                type="number"
-                min={18}
-                max={120}
-                placeholder="Informe sua idade em anos (ex: 28)..."
-                value={formData.idadeAnosExata}
-                onChange={(e) => setFormData({ ...formData, idadeAnosExata: e.target.value })}
-                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
-              />
-            )}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              {[
+                { id: '18-35', label: '18–35 anos' },
+                { id: '36-59', label: '36–59 anos' },
+                { id: '60+', label: '60 anos ou mais' },
+              ].map((item) => (
+                <label
+                  key={item.id}
+                  className={`flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer text-xs font-semibold transition-all ${
+                    formData.faixaEtaria === item.id
+                      ? 'bg-indigo-50 border-indigo-500 text-indigo-900 shadow-xs'
+                      : 'bg-slate-50 border-slate-200 text-slate-700 hover:border-indigo-300 hover:bg-indigo-50/50'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="faixaEtaria"
+                    value={item.id}
+                    checked={formData.faixaEtaria === item.id}
+                    onChange={() => setFormData({ ...formData, faixaEtaria: item.id })}
+                    className="accent-indigo-600"
+                  />
+                  <span>{item.label}</span>
+                </label>
+              ))}
+            </div>
           </div>
 
           {/* 1.3 Escolaridade */}
@@ -288,10 +320,7 @@ export const SociodemographicQuestionnaire: React.FC<SociodemographicQuestionnai
           {/* 2.1 Região de origem */}
           <div className="space-y-2">
             <label className="block text-sm font-semibold text-slate-800">
-              2.1 Em qual região do Brasil você nasceu ou cresceu?
-              <span className="block text-xs font-normal text-slate-500 mt-0.5">
-                (Caso sejam diferentes, considere onde passou a maior parte da infância)
-              </span>
+              2.1 Em qual região do Brasil você passou a maior parte da sua infância?
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
               {['Norte', 'Nordeste', 'Centro-Oeste', 'Sudeste', 'Sul', 'Exterior'].map((reg) => (
@@ -330,13 +359,154 @@ export const SociodemographicQuestionnaire: React.FC<SociodemographicQuestionnai
               <GitBranch className="w-4 h-4 text-indigo-600 shrink-0" />
               <span>
                 {isNordeste && 'Região selecionada: Nordeste -> Exibindo perguntas 2.2, 2.3, 2.4 e 2.5'}
-                {isSudeste && 'Região selecionada: Sudeste -> Seguindo para pergunta 2.6'}
-                {isOutraRegiao && `Região selecionada: ${formData.regiaoOrigem} -> Seguindo para encerramento do questionário (2.8)`}
+                {isSudeste && 'Região selecionada: Sudeste -> Exibindo perguntas 2.2 (RMC) e 2.3 (outros locais)'}
+                {isOutraRegiao && `Região selecionada: ${formData.regiaoOrigem} -> Exibindo pergunta 2.6 de histórico de residência`}
               </span>
             </div>
           )}
 
-          {/* CONDICIONAL NORDESTE (2.2 a 2.5) */}
+          {/* CONDICIONAL SUDESTE (2.2 e 2.3) */}
+          {isSudeste && (
+            <div className="space-y-6 pt-4 border-t border-indigo-100 bg-indigo-50/40 p-4 rounded-xl border border-indigo-100">
+              <span className="text-xs font-mono font-bold text-indigo-800 uppercase tracking-wider block">
+                Módulo Específico: Origem Sudeste
+              </span>
+
+              {/* 2.2 Sudeste: Você é da Região Metropolitana de Campinas (RMC)? */}
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-slate-800">
+                  2.2 Você é da Região Metropolitana de Campinas (RMC)?
+                </label>
+                <div className="flex gap-4">
+                  {[
+                    { id: 'sim', label: 'Sim' },
+                    { id: 'nao', label: 'Não' },
+                  ].map((item) => (
+                    <label
+                      key={item.id}
+                      className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-xl border cursor-pointer text-xs font-bold transition-all ${
+                        formData.eDeCampinasSudeste === item.id
+                          ? 'bg-indigo-100 border-indigo-500 text-indigo-900 shadow-xs'
+                          : 'bg-white border-slate-200 text-slate-700 hover:border-indigo-300'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="eDeCampinasSudeste"
+                        value={item.id}
+                        checked={formData.eDeCampinasSudeste === item.id}
+                        onChange={() =>
+                          setFormData({
+                            ...formData,
+                            eDeCampinasSudeste: item.id as 'sim' | 'nao'
+                          })
+                        }
+                        className="accent-indigo-600"
+                      />
+                      <span>{item.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* 2.3 Sudeste: Você já residiu em outros lugares? */}
+              <div className="space-y-3 pt-2 border-t border-indigo-100">
+                <label className="block text-sm font-semibold text-slate-800">
+                  2.3 Você já residiu em outros lugares?
+                </label>
+                <div className="flex gap-4">
+                  {[
+                    { id: 'sim', label: 'Sim' },
+                    { id: 'nao', label: 'Não' },
+                  ].map((item) => (
+                    <label
+                      key={item.id}
+                      className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-xl border cursor-pointer text-xs font-bold transition-all ${
+                        formData.residiuOutrosLocaisSudeste === item.id
+                          ? 'bg-indigo-100 border-indigo-500 text-indigo-900 shadow-xs'
+                          : 'bg-white border-slate-200 text-slate-700 hover:border-indigo-300'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="residiuOutrosLocaisSudeste"
+                        value={item.id}
+                        checked={formData.residiuOutrosLocaisSudeste === item.id}
+                        onChange={() =>
+                          setFormData({
+                            ...formData,
+                            residiuOutrosLocaisSudeste: item.id as 'sim' | 'nao',
+                            residiuOutrosLocaisInfanciaSudeste: undefined,
+                            outrosLocaisDetalhesSudeste: ''
+                          })
+                        }
+                        className="accent-indigo-600"
+                      />
+                      <span>{item.label}</span>
+                    </label>
+                  ))}
+                </div>
+
+                {/* Sub-perguntas se residiu em outros lugares = SIM */}
+                {formData.residiuOutrosLocaisSudeste === 'sim' && (
+                  <div className="space-y-4 pt-3 pl-3 border-l-2 border-indigo-400 bg-white/70 p-4 rounded-r-xl border-y border-r border-indigo-100 shadow-xs mt-2">
+                    {/* Foi durante a sua infância? */}
+                    <div className="space-y-2">
+                      <label className="block text-xs font-bold text-slate-800">
+                        Foi durante a sua infância?
+                      </label>
+                      <div className="flex gap-4">
+                        {[
+                          { id: 'sim', label: 'Sim' },
+                          { id: 'nao', label: 'Não' },
+                        ].map((item) => (
+                          <label
+                            key={item.id}
+                            className={`flex-1 flex items-center justify-center gap-2 p-2.5 rounded-lg border cursor-pointer text-xs font-bold transition-all ${
+                              formData.residiuOutrosLocaisInfanciaSudeste === item.id
+                                ? 'bg-indigo-100 border-indigo-500 text-indigo-900'
+                                : 'bg-white border-slate-200 text-slate-700 hover:border-indigo-300'
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="residiuOutrosLocaisInfanciaSudeste"
+                              value={item.id}
+                              checked={formData.residiuOutrosLocaisInfanciaSudeste === item.id}
+                              onChange={() =>
+                                setFormData({
+                                  ...formData,
+                                  residiuOutrosLocaisInfanciaSudeste: item.id as 'sim' | 'nao'
+                                })
+                              }
+                              className="accent-indigo-600"
+                            />
+                            <span>{item.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Em quais locais você residiu e por quanto tempo? */}
+                    <div className="space-y-1.5 pt-1">
+                      <label className="block text-xs font-bold text-slate-800">
+                        Em quais locais você residiu e por quanto tempo?
+                      </label>
+                      <textarea
+                        rows={2}
+                        placeholder="Ex: São Paulo - SP (2 anos), Ribeirão Preto - SP (5 anos)..."
+                        value={formData.outrosLocaisDetalhesSudeste || ''}
+                        onChange={(e) =>
+                          setFormData({ ...formData, outrosLocaisDetalhesSudeste: e.target.value })
+                        }
+                        className="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
           {isNordeste && (
             <div className="space-y-6 pt-4 border-t border-indigo-100 bg-indigo-50/40 p-4 rounded-xl border border-indigo-100">
               <span className="text-xs font-mono font-bold text-indigo-800 uppercase tracking-wider block">
@@ -547,7 +717,7 @@ export const SociodemographicQuestionnaire: React.FC<SociodemographicQuestionnai
           {showSection26 && (
             <div className="space-y-4 pt-4 border-t border-slate-100">
               <label className="block text-sm font-semibold text-slate-800">
-                2.6 Além da região onde você nasceu ou cresceu e de Campinas, você já residiu em outros locais?
+                2.6 Além da região onde você passou a maior parte da sua infância e de Campinas, você já residiu em outros locais?
               </label>
               <div className="flex gap-4">
                 {[

@@ -81,8 +81,14 @@ export interface SociodemographicData {
   idadeChegadaCampinas?: IdadeChegadaCampinas;
   idadeChegadaCampinasAnos?: string;
 
+  // Condicional Sudeste (2.2 e 2.3 Sudeste)
+  eDeCampinasSudeste?: 'sim' | 'nao'; // "Você é da Região Metropolitana de Campinas?"
+  residiuOutrosLocaisSudeste?: 'sim' | 'nao'; // "Você já residiu em outros lugares?"
+  residiuOutrosLocaisInfanciaSudeste?: 'sim' | 'nao'; // "Foi durante a sua infância?"
+  outrosLocaisDetalhesSudeste?: string; // "Quais locais e por quanto tempo?"
+
   // Classificação automática derivada
-  classificacaoMigratoria?: 'nordestino_migrante' | 'nordestino_nao_migrante' | 'outra_regiao';
+  classificacaoMigratoria?: 'nordestino_migrante' | 'nordestino_nao_migrante' | 'sudeste_rmc' | 'sudeste_outros' | 'outra_regiao';
 
   // 2.6 e 2.7 Residência em outros locais
   residiuOutrosLocais?: 'sim' | 'nao';
