@@ -104,7 +104,33 @@ export interface ParticipantSession {
   endTime?: string;
   tcleAccepted: boolean;
   tcleAcceptedAt?: string;
+
+  // Exact presentation orders for statistical tracking of trial order effects
+  presentedOrderAudioPairs: string[]; // List of audio pair trial IDs in exact randomized display order
+  presentedOrderMapTrials: string[];  // List of map trial IDs in exact randomized display order
+
   audioPairResponses: AudioPairResponse[];
   mapClickResponses: MapClickResponse[];
   sociodemographic: SociodemographicData;
+
+  // Submission tracking
+  submittedToGas?: boolean;
+  submittedAt?: string;
+  submissionError?: string;
+}
+
+export interface GasExperimentConfig {
+  status: 'aberto' | 'fechado';
+  mensagemFechado?: string;
+  tituloPesquisa?: string;
+  instituicao?: string;
+  contatoPesquisador?: string;
+}
+
+export interface GasExperimentPayload {
+  config: GasExperimentConfig;
+  sections: {
+    audioPairs: AudioPairTrial[];
+    mapTrials: MapAudioTrial[];
+  };
 }

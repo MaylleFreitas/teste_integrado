@@ -30,6 +30,10 @@ export function generateWideCSV(sessions: ParticipantSession[]): string {
     'endTime',
     'tcleAccepted',
 
+    // Ordem Apresentada (Controle Estatístico de Efeito de Ordem)
+    'ordemApresentadaParesAudio',
+    'ordemApresentadaMapa',
+
     // Questionário Social
     'genero',
     'generoOutro',
@@ -95,6 +99,9 @@ export function generateWideCSV(sessions: ParticipantSession[]): string {
       s.startTime || '',
       s.endTime || '',
       s.tcleAccepted ? 'SIM' : 'NÃO',
+
+      (s.presentedOrderAudioPairs || []).join('; '),
+      (s.presentedOrderMapTrials || []).join('; '),
 
       socio.genero || '',
       socio.generoOutro || '',
